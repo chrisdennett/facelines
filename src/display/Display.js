@@ -16,7 +16,7 @@ const Display = ({ sizeInfo, appData }) => {
     lineThickness,
     showVerticalLines,
     showHorizontalLines
-  } = appData.settings; //blockSize * 1.2;
+  } = appData.settings;
   const maxLineOffset = blockSize * pointOffset.value;
 
   const blockWidth = 132;
@@ -105,6 +105,7 @@ const createPaths = (blockData, blockSize, maxLineOffset) => {
 
   let i, x, y, colIndex, row, col, rowIndex, pointOffset;
 
+  // create rows
   for (rowIndex = 0; rowIndex < totalRows; rowIndex++) {
     points = "";
     row = rows[rowIndex];
@@ -112,8 +113,9 @@ const createPaths = (blockData, blockSize, maxLineOffset) => {
     for (colIndex = 0; colIndex < totalCols; colIndex++) {
       i = rowIndex * totalCols + colIndex;
 
-      x = colIndex * blockSize;
       pointOffset = row[colIndex] * maxLineOffset;
+
+      x = colIndex * blockSize - pointOffset;
       y = rowIndex * blockSize - pointOffset;
 
       points += ` ${x},${y}`;
@@ -122,6 +124,7 @@ const createPaths = (blockData, blockSize, maxLineOffset) => {
     horizontalPaths.push(points);
   }
 
+  // create cols
   for (colIndex = 0; colIndex < totalCols; colIndex++) {
     points = "";
     col = cols[colIndex];
@@ -129,8 +132,8 @@ const createPaths = (blockData, blockSize, maxLineOffset) => {
     for (rowIndex = 0; rowIndex < totalRows; rowIndex++) {
       i = rowIndex * totalCols + colIndex;
 
-      y = rowIndex * blockSize;
       pointOffset = col[rowIndex] * maxLineOffset;
+      y = rowIndex * blockSize - pointOffset;
       x = colIndex * blockSize - pointOffset;
 
       points += ` ${x},${y}`;
