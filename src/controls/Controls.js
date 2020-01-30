@@ -19,13 +19,21 @@ const Controls = ({ appData, onUpdate }) => {
       <ControlsUI>
         <SliderControl
           labelStyle={{ minWidth: 150 }}
-          label={"Blur:"}
+          label={settings.pointOffset.label}
           displayValue={true}
-          step={1}
-          min={settings.testRange.min}
-          max={settings.testRange.max}
-          value={settings.testRange.value}
-          onChange={value => updateSettings("testRange", value)}
+          min={settings.pointOffset.min}
+          max={settings.pointOffset.max}
+          value={settings.pointOffset.value}
+          onChange={value => updateSettings("pointOffset", value)}
+        />
+        <SliderControl
+          labelStyle={{ minWidth: 150 }}
+          label={settings.lineThickness.label}
+          displayValue={true}
+          min={settings.lineThickness.min}
+          max={settings.lineThickness.max}
+          value={settings.lineThickness.value}
+          onChange={value => updateSettings("lineThickness", value)}
         />
       </ControlsUI>
     </Container>

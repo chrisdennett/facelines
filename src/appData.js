@@ -1,11 +1,19 @@
 export const defaultAppData = {
-  title: "Template",
+  title: "FACE LINES",
   infoUrl: "https://artfly.io/binary-hands",
   settings: {
-    testRange: {
+    pointOffset: {
+      label: "Point Offset",
+      type: "range",
+      min: 0,
+      max: 50,
+      value: 1.3
+    },
+    lineThickness: {
+      label: "Line Thickness",
       type: "range",
       min: 1,
-      max: 10,
+      max: 50,
       value: 2
     }
   }

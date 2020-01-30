@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 
-const Display = ({ sizeInfo }) => {
+const Display = ({ sizeInfo, appData }) => {
   const [sourceImg, setSourceImg] = useState(null);
-  const [paths, setPaths] = useState([]);
+  // const [paths, setPaths] = useState([]);
   const [canvasX, setCanvasX] = useState(0);
   const [canvasY, setCanvasY] = useState(0);
-  const canvasRef = React.useRef(null);
+  const [canvasWidth, setCanvasWidth] = useState(100);
+  const [canvasHeight, setCanvasHeight] = useState(100);
+  const [blockSize, setBlockSize] = useState(10);
+  const [blockData, setBlockData] = useState(null);
 
-  const blockSize = 6;
-  const lineThickness = 3;
   const lineColour = "black";
-  const maxPointOffset = blockSize * 1.2;
+  const { pointOffset, lineThickness } = appData.settings; //blockSize * 1.2;
+  const maxLineOffset = blockSize * pointOffset.value;
+
+  const blockWidth = 132;
 
   useEffect(() => {
     if (!sourceImg) {
@@ -20,39 +24,52 @@ const Display = ({ sizeInfo }) => {
       image.onload = () => {
         setSourceImg(image);
       };
-      image.src = "img/sample-397x480.png";
+      image.src = "img/holly.jpg";
+      // image.src = "img/sample-397x480.png";
     } else {
-      const smallCanvas = createSmallCanvas(sourceImg, 128, 128);
-      const blockData = getBlockData(smallCanvas);
+      const smallCanvas = createSmallCanvas(sourceImg, blockWidth, blockWidth);
+      const bData = getBlockData(smallCanvas);
 
-      // const { w, h } = drawCanvas(
-      //   blockCanvas,
-      //   canvasRef.current,
-      //   sizeInfo.width,
-      //   sizeInfo.height
-      // );
+      const { width, height } = getDimensions(
+        bData.width,
+        bData.height,
+        sizeInfo.width,
+        sizeInfo.height
+      );
 
-      // const x = (sizeInfo.width - w) / 2;
-      // const y = (sizeInfo.height - h) / 2;
+      const x = (sizeInfo.width - width) / 2;
+      const y = (sizeInfo.height - height) / 2;
 
-      // setCanvasX(x);
-      // setCanvasY(y);
-
-      setPaths(createPaths(blockData, blockSize, maxPointOffset));
+      setBlockData(bData);
+      setCanvasX(x);
+      setCanvasY(y);
+      setCanvasWidth(width);
+      setCanvasHeight(height);
+      setBlockSize(width / bData.width);
     }
   }, [sourceImg, sizeInfo]);
+
+  if (!blockData) return <div>NO DATA</div>;
+
+  const paths = createPaths(
+    canvasWidth,
+    canvasHeight,
+    blockData,
+    blockSize,
+    maxLineOffset
+  );
 
   return (
     <Container>
       <CanvasHolder left={canvasX} top={canvasY}>
         {/* <canvas ref={canvasRef} /> */}
-        <svg width={sizeInfo.width} height={sizeInfo.height}>
+        <svg width={canvasWidth} height={canvasHeight}>
           {paths.map((path, index) => (
             <polyline
               key={index}
               fill={"none"}
               stroke={lineColour}
-              strokeWidth={lineThickness}
+              strokeWidth={lineThickness.value}
               points={path}
             />
           ))}
@@ -64,15 +81,10 @@ const Display = ({ sizeInfo }) => {
 
 export default Display;
 
-const drawCanvas = (source, targetCanvas, maxTargetWidth, maxTargetHeight) => {
-  const ctx = targetCanvas.getContext("2d");
-
-  const sourceW = source.width;
-  const sourceH = source.height;
-
+const getDimensions = (sourceW, sourceH, maxWidth, maxHeight) => {
   // limit maximum size to source image size (i.e. don't increase size)
-  const maxWidth = Math.min(maxTargetWidth, sourceW);
-  const maxHeight = Math.min(maxTargetHeight, sourceH);
+  //const maxWidth = Math.min(maxTargetWidth, sourceW);
+  //const maxHeight = Math.min(maxTargetHeight, sourceH);
 
   const widthToHeightRatio = sourceH / sourceW;
   const heightToWidthRatio = sourceW / sourceH;
@@ -87,15 +99,8 @@ const drawCanvas = (source, targetCanvas, maxTargetWidth, maxTargetHeight) => {
     h = maxHeight;
     w = h * heightToWidthRatio;
   }
-
-  targetCanvas.width = w;
-  targetCanvas.height = h;
-
-  //	context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
-  ctx.drawImage(source, 0, 0, sourceW, sourceH, 0, 0, w, h);
-
   // return the output width and height so it can be used to position canvas
-  return { w, h };
+  return { width: w, height: h };
 };
 
 const createSmallCanvas = (source, maxWidth, maxHeight) => {
@@ -127,11 +132,11 @@ const createSmallCanvas = (source, maxWidth, maxHeight) => {
   return smallCanvas;
 };
 
-const createPaths = (blockData, blockSize, maxPointOffset) => {
+const createPaths = (width, height, blockData, blockSize, maxLineOffset) => {
   let points = "0,0";
   let paths = [];
 
-  const { width, height, rows } = blockData;
+  const { rows } = blockData;
   const totalRows = rows.length;
   const totalCols = rows[0].length;
 
@@ -145,7 +150,7 @@ const createPaths = (blockData, blockSize, maxPointOffset) => {
       i = rowIndex * totalCols + colIndex;
 
       x = colIndex * blockSize;
-      pointOffset = row[colIndex] * maxPointOffset;
+      pointOffset = row[colIndex] * maxLineOffset;
       y = rowIndex * blockSize - pointOffset;
 
       points += ` ${x},${y}`;
