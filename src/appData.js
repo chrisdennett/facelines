@@ -2,6 +2,8 @@ export const defaultAppData = {
   title: "FACE LINES",
   infoUrl: "https://artfly.io/binary-hands",
   settings: {
+    showVerticalLines: true,
+    showHorizontalLines: true,
     pointOffset: {
       label: "Point Offset",
       type: "range",

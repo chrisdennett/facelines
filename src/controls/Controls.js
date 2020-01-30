@@ -2,6 +2,7 @@ import React from "react";
 import styled from "styled-components";
 // comps
 import SliderControl from "./sliderControl/SliderControl";
+import { SwitchControl } from "./switchControl/SwitchControl";
 
 const Controls = ({ appData, onUpdate }) => {
   const { settings } = appData;
@@ -14,9 +15,28 @@ const Controls = ({ appData, onUpdate }) => {
     });
   };
 
+  const updateBoolean = (key, newValue) => {
+    onUpdate({
+      ...appData,
+      settings: { ...settings, [key]: newValue }
+    });
+  };
+
   return (
     <Container>
       <ControlsUI>
+        <SwitchControl
+          label={"Show Vertical Lines"}
+          defaultChecked={settings.showVerticalLines}
+          checked={settings.showVerticalLines}
+          onUpdate={value => updateBoolean("showVerticalLines", value)}
+        />
+        <SwitchControl
+          label={"Show Horizontal Lines"}
+          defaultChecked={settings.showHorizontalLines}
+          checked={settings.showHorizontalLines}
+          onUpdate={value => updateBoolean("showHorizontalLines", value)}
+        />
         <SliderControl
           labelStyle={{ minWidth: 150 }}
           label={settings.pointOffset.label}

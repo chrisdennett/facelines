@@ -31,7 +31,7 @@ function App() {
         </Space.Info>
       </Space.Fill>
       {optionsVisible && (
-        <Space.BottomResizable size={120} scrollable={true}>
+        <Space.BottomResizable size={180} scrollable={true}>
           <Controls onUpdate={setAppData} appData={appData} />
         </Space.BottomResizable>
       )}

@@ -11,7 +11,12 @@ const Display = ({ sizeInfo, appData }) => {
   const [blockData, setBlockData] = useState(null);
 
   const lineColour = "black";
-  const { pointOffset, lineThickness } = appData.settings; //blockSize * 1.2;
+  const {
+    pointOffset,
+    lineThickness,
+    showVerticalLines,
+    showHorizontalLines
+  } = appData.settings; //blockSize * 1.2;
   const maxLineOffset = blockSize * pointOffset.value;
 
   const blockWidth = 132;
@@ -60,25 +65,27 @@ const Display = ({ sizeInfo, appData }) => {
     <Container>
       <CanvasHolder left={canvasX} top={canvasY}>
         <svg width={canvasWidth} height={canvasHeight}>
-          {horizontalPaths.map((hPath, index) => (
-            <polyline
-              key={index}
-              fill={"none"}
-              stroke={lineColour}
-              strokeWidth={lineThickness.value}
-              points={hPath}
-            />
-          ))}
+          {showHorizontalLines &&
+            horizontalPaths.map((hPath, index) => (
+              <polyline
+                key={index}
+                fill={"none"}
+                stroke={lineColour}
+                strokeWidth={lineThickness.value}
+                points={hPath}
+              />
+            ))}
 
-          {verticalPaths.map((vPath, index) => (
-            <polyline
-              key={index}
-              fill={"none"}
-              stroke={"red"}
-              strokeWidth={lineThickness.value}
-              points={vPath}
-            />
-          ))}
+          {showVerticalLines &&
+            verticalPaths.map((vPath, index) => (
+              <polyline
+                key={index}
+                fill={"none"}
+                stroke={"red"}
+                strokeWidth={lineThickness.value}
+                points={vPath}
+              />
+            ))}
         </svg>
       </CanvasHolder>
     </Container>
