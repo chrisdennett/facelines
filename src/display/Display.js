@@ -3,7 +3,6 @@ import styled from "styled-components";
 
 const Display = ({ sizeInfo, appData }) => {
   const [sourceImg, setSourceImg] = useState(null);
-  // const [paths, setPaths] = useState([]);
   const [canvasX, setCanvasX] = useState(0);
   const [canvasY, setCanvasY] = useState(0);
   const [canvasWidth, setCanvasWidth] = useState(100);
@@ -51,9 +50,7 @@ const Display = ({ sizeInfo, appData }) => {
 
   if (!blockData) return <div>NO DATA</div>;
 
-  const paths = createPaths(
-    canvasWidth,
-    canvasHeight,
+  const { horizontalPaths, verticalPaths } = createPaths(
     blockData,
     blockSize,
     maxLineOffset
@@ -62,15 +59,24 @@ const Display = ({ sizeInfo, appData }) => {
   return (
     <Container>
       <CanvasHolder left={canvasX} top={canvasY}>
-        {/* <canvas ref={canvasRef} /> */}
         <svg width={canvasWidth} height={canvasHeight}>
-          {paths.map((path, index) => (
+          {horizontalPaths.map((hPath, index) => (
             <polyline
               key={index}
               fill={"none"}
               stroke={lineColour}
               strokeWidth={lineThickness.value}
-              points={path}
+              points={hPath}
+            />
+          ))}
+
+          {verticalPaths.map((vPath, index) => (
+            <polyline
+              key={index}
+              fill={"none"}
+              stroke={"red"}
+              strokeWidth={lineThickness.value}
+              points={vPath}
             />
           ))}
         </svg>
@@ -80,6 +86,104 @@ const Display = ({ sizeInfo, appData }) => {
 };
 
 export default Display;
+
+const createPaths = (blockData, blockSize, maxLineOffset) => {
+  let points = "0,0";
+  let horizontalPaths = [];
+  let verticalPaths = [];
+
+  const { rows, cols } = blockData;
+  const totalRows = rows.length;
+  const totalCols = rows[0].length;
+
+  let i, x, y, colIndex, row, col, rowIndex, pointOffset;
+
+  for (rowIndex = 0; rowIndex < totalRows; rowIndex++) {
+    points = "";
+    row = rows[rowIndex];
+
+    for (colIndex = 0; colIndex < totalCols; colIndex++) {
+      i = rowIndex * totalCols + colIndex;
+
+      x = colIndex * blockSize;
+      pointOffset = row[colIndex] * maxLineOffset;
+      y = rowIndex * blockSize - pointOffset;
+
+      points += ` ${x},${y}`;
+    }
+
+    horizontalPaths.push(points);
+  }
+
+  for (colIndex = 0; colIndex < totalCols; colIndex++) {
+    points = "";
+    col = cols[colIndex];
+
+    for (rowIndex = 0; rowIndex < totalRows; rowIndex++) {
+      i = rowIndex * totalCols + colIndex;
+
+      y = rowIndex * blockSize;
+      pointOffset = col[rowIndex] * maxLineOffset;
+      x = colIndex * blockSize - pointOffset;
+
+      points += ` ${x},${y}`;
+    }
+
+    verticalPaths.push(points);
+  }
+
+  return { horizontalPaths, verticalPaths };
+};
+
+const getBlockData = inputCanvas => {
+  const { width: inputW, height: inputH } = inputCanvas;
+  const blockData = {
+    width: inputW,
+    height: inputH,
+    rows: [],
+    cols: []
+  };
+
+  const inputCtx = inputCanvas.getContext("2d");
+  let imgData = inputCtx.getImageData(0, 0, inputW, inputH);
+  let pixels = imgData.data;
+
+  let i, r, g, b, brightness, decimalPercentage, x, y;
+
+  for (y = 0; y < inputH; y++) {
+    const row = [];
+
+    for (x = 0; x < inputW; x++) {
+      i = (y * inputW + x) * 4;
+
+      r = pixels[i];
+      g = pixels[i + 1];
+      b = pixels[i + 2];
+
+      brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
+
+      decimalPercentage = 1 - brightness / 255;
+      row.push(decimalPercentage);
+    }
+    blockData.rows.push(row);
+  }
+
+  // loop through the rows and the values in them
+  // for each rom push the values each into a different col
+
+  let cellsPerRow = blockData.rows[0].length;
+  for (let rowIndex = 0; rowIndex < blockData.rows.length; rowIndex++) {
+    for (let cellIndex = 0; cellIndex < cellsPerRow; cellIndex++) {
+      // add col array if not made yet
+      if (!blockData.cols[cellIndex]) blockData.cols[cellIndex] = [];
+
+      // add the row value to the correct col in the correct place
+      blockData.cols[cellIndex][rowIndex] = blockData.rows[rowIndex][cellIndex];
+    }
+  }
+
+  return blockData;
+};
 
 const getDimensions = (sourceW, sourceH, maxWidth, maxHeight) => {
   // limit maximum size to source image size (i.e. don't increase size)
@@ -130,118 +234,6 @@ const createSmallCanvas = (source, maxWidth, maxHeight) => {
   ctx.drawImage(source, 0, 0, sourceW, sourceH, 0, 0, targetW, targetH);
 
   return smallCanvas;
-};
-
-const createPaths = (width, height, blockData, blockSize, maxLineOffset) => {
-  let points = "0,0";
-  let paths = [];
-
-  const { rows } = blockData;
-  const totalRows = rows.length;
-  const totalCols = rows[0].length;
-
-  let i, x, y, colIndex, row, rowIndex, pointOffset;
-
-  for (rowIndex = 0; rowIndex < totalRows; rowIndex++) {
-    points = "";
-    row = rows[rowIndex];
-
-    for (colIndex = 0; colIndex < totalCols; colIndex++) {
-      i = rowIndex * totalCols + colIndex;
-
-      x = colIndex * blockSize;
-      pointOffset = row[colIndex] * maxLineOffset;
-      y = rowIndex * blockSize - pointOffset;
-
-      points += ` ${x},${y}`;
-    }
-
-    paths.push(points);
-  }
-
-  return paths;
-};
-
-const getBlockData = inputCanvas => {
-  const { width: inputW, height: inputH } = inputCanvas;
-  const blockData = {
-    width: inputW,
-    height: inputH,
-    rows: []
-  };
-
-  const blockSize = 50;
-  const outputCanvas = document.createElement("canvas");
-  outputCanvas.width = inputW * blockSize;
-  outputCanvas.height = inputH * blockSize;
-  const outputCtx = outputCanvas.getContext("2d");
-
-  const inputCtx = inputCanvas.getContext("2d");
-  let imgData = inputCtx.getImageData(0, 0, inputW, inputH);
-  let pixels = imgData.data;
-
-  let i, r, g, b, brightness, decimalPercentage, x, y;
-  const colour = "purple";
-
-  for (y = 0; y < inputH; y++) {
-    // for (y = 0; y < 5; y++) {
-    const row = [];
-
-    for (x = 0; x < inputW; x++) {
-      i = (y * inputW + x) * 4;
-
-      r = pixels[i];
-      g = pixels[i + 1];
-      b = pixels[i + 2];
-
-      brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
-
-      decimalPercentage = 1 - brightness / 255;
-      row.push(decimalPercentage);
-    }
-    blockData.rows.push(row);
-  }
-
-  return blockData;
-};
-
-const createBlockCanvas = inputCanvas => {
-  const { width: inputW, height: inputH } = inputCanvas;
-
-  const blockSize = 50;
-  const outputCanvas = document.createElement("canvas");
-  outputCanvas.width = inputW * blockSize;
-  outputCanvas.height = inputH * blockSize;
-  const outputCtx = outputCanvas.getContext("2d");
-
-  const inputCtx = inputCanvas.getContext("2d");
-  let imgData = inputCtx.getImageData(0, 0, inputW, inputH);
-  let pixels = imgData.data;
-
-  let r, g, b, grey;
-  const colour = "purple";
-
-  for (let y = 0; y < inputH; y++) {
-    for (let x = 0; x < inputW; x++) {
-      const i = (y * inputW + x) * 4;
-
-      r = pixels[i];
-      g = pixels[i + 1];
-      b = pixels[i + 2];
-
-      grey = r * 0.2126 + g * 0.7152 + b * 0.0722;
-
-      const decimalPercentage = 1 - grey / 255;
-      const diam = blockSize * decimalPercentage * 1.3;
-
-      outputCtx.fillStyle = colour;
-      outputCtx.beginPath();
-      outputCtx.arc(x * blockSize, y * blockSize, diam / 2, 0, 2 * Math.PI);
-      outputCtx.fill();
-    }
-  }
-
-  return outputCanvas;
 };
 
 // STYLES

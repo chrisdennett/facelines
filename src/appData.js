@@ -7,7 +7,7 @@ export const defaultAppData = {
       type: "range",
       min: 0,
       max: 50,
-      value: 1.3
+      value: 4.3
     },
     lineThickness: {
       label: "Line Thickness",
