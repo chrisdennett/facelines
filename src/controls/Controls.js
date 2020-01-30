@@ -16,7 +16,7 @@ const Controls = ({ appData, onUpdate }) => {
 
   return (
     <Container>
-      <SlicerHolder>
+      <ControlsUI>
         <SliderControl
           labelStyle={{ minWidth: 150 }}
           label={"Blur:"}
@@ -27,7 +27,7 @@ const Controls = ({ appData, onUpdate }) => {
           value={settings.testRange.value}
           onChange={value => updateSettings("testRange", value)}
         />
-      </SlicerHolder>
+      </ControlsUI>
     </Container>
   );
 };
@@ -36,11 +36,11 @@ export default Controls;
 
 // STYLES
 const Container = styled.div`
-  height: 100%;
+  padding-top: 5px;
   background: black;
   color: white;
 `;
 
-const SlicerHolder = styled.div`
-  padding: 0 10px;
+const ControlsUI = styled.div`
+  margin: 15px;
 `;
