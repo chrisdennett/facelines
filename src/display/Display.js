@@ -3,9 +3,15 @@ import styled from "styled-components";
 
 const Display = ({ sizeInfo }) => {
   const [sourceImg, setSourceImg] = useState(null);
+  const [paths, setPaths] = useState([]);
   const [canvasX, setCanvasX] = useState(0);
   const [canvasY, setCanvasY] = useState(0);
   const canvasRef = React.useRef(null);
+
+  const blockSize = 6;
+  const lineThickness = 3;
+  const lineColour = "black";
+  const maxPointOffset = blockSize * 1.2;
 
   useEffect(() => {
     if (!sourceImg) {
@@ -17,26 +23,40 @@ const Display = ({ sizeInfo }) => {
       image.src = "img/sample-397x480.png";
     } else {
       const smallCanvas = createSmallCanvas(sourceImg, 128, 128);
-      const blockCanvas = createBlockCanvas(smallCanvas);
+      const blockData = getBlockData(smallCanvas);
 
-      const { w, h } = drawCanvas(
-        blockCanvas,
-        canvasRef.current,
-        sizeInfo.width,
-        sizeInfo.height
-      );
-      const x = (sizeInfo.width - w) / 2;
-      const y = (sizeInfo.height - h) / 2;
+      // const { w, h } = drawCanvas(
+      //   blockCanvas,
+      //   canvasRef.current,
+      //   sizeInfo.width,
+      //   sizeInfo.height
+      // );
 
-      setCanvasX(x);
-      setCanvasY(y);
+      // const x = (sizeInfo.width - w) / 2;
+      // const y = (sizeInfo.height - h) / 2;
+
+      // setCanvasX(x);
+      // setCanvasY(y);
+
+      setPaths(createPaths(blockData, blockSize, maxPointOffset));
     }
   }, [sourceImg, sizeInfo]);
 
   return (
     <Container>
       <CanvasHolder left={canvasX} top={canvasY}>
-        <canvas ref={canvasRef} />
+        {/* <canvas ref={canvasRef} /> */}
+        <svg width={sizeInfo.width} height={sizeInfo.height}>
+          {paths.map((path, index) => (
+            <polyline
+              key={index}
+              fill={"none"}
+              stroke={lineColour}
+              strokeWidth={lineThickness}
+              points={path}
+            />
+          ))}
+        </svg>
       </CanvasHolder>
     </Container>
   );
@@ -107,6 +127,79 @@ const createSmallCanvas = (source, maxWidth, maxHeight) => {
   return smallCanvas;
 };
 
+const createPaths = (blockData, blockSize, maxPointOffset) => {
+  let points = "0,0";
+  let paths = [];
+
+  const { width, height, rows } = blockData;
+  const totalRows = rows.length;
+  const totalCols = rows[0].length;
+
+  let i, x, y, colIndex, row, rowIndex, pointOffset;
+
+  for (rowIndex = 0; rowIndex < totalRows; rowIndex++) {
+    points = "";
+    row = rows[rowIndex];
+
+    for (colIndex = 0; colIndex < totalCols; colIndex++) {
+      i = rowIndex * totalCols + colIndex;
+
+      x = colIndex * blockSize;
+      pointOffset = row[colIndex] * maxPointOffset;
+      y = rowIndex * blockSize - pointOffset;
+
+      points += ` ${x},${y}`;
+    }
+
+    paths.push(points);
+  }
+
+  return paths;
+};
+
+const getBlockData = inputCanvas => {
+  const { width: inputW, height: inputH } = inputCanvas;
+  const blockData = {
+    width: inputW,
+    height: inputH,
+    rows: []
+  };
+
+  const blockSize = 50;
+  const outputCanvas = document.createElement("canvas");
+  outputCanvas.width = inputW * blockSize;
+  outputCanvas.height = inputH * blockSize;
+  const outputCtx = outputCanvas.getContext("2d");
+
+  const inputCtx = inputCanvas.getContext("2d");
+  let imgData = inputCtx.getImageData(0, 0, inputW, inputH);
+  let pixels = imgData.data;
+
+  let i, r, g, b, brightness, decimalPercentage, x, y;
+  const colour = "purple";
+
+  for (y = 0; y < inputH; y++) {
+    // for (y = 0; y < 5; y++) {
+    const row = [];
+
+    for (x = 0; x < inputW; x++) {
+      i = (y * inputW + x) * 4;
+
+      r = pixels[i];
+      g = pixels[i + 1];
+      b = pixels[i + 2];
+
+      brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
+
+      decimalPercentage = 1 - brightness / 255;
+      row.push(decimalPercentage);
+    }
+    blockData.rows.push(row);
+  }
+
+  return blockData;
+};
+
 const createBlockCanvas = inputCanvas => {
   const { width: inputW, height: inputH } = inputCanvas;
 
@@ -156,7 +249,7 @@ const CanvasHolder = styled.div`
 `;
 
 const Container = styled.div`
-  background: yellow;
+  background: white;
   width: 100%;
   height: 100%;
 `;
