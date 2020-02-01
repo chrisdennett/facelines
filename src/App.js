@@ -8,7 +8,7 @@ import { defaultAppData } from "./appData";
 
 function App() {
   const [appData, setAppData] = useState(defaultAppData);
-  const [optionsVisible, setOptionsVisible] = useState(true);
+  const [optionsVisible, setOptionsVisible] = useState(false);
 
   return (
     <Space.ViewPort>

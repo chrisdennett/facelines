@@ -4,6 +4,7 @@ export const defaultAppData = {
   settings: {
     showVerticalLines: true,
     showHorizontalLines: true,
+    fringeFraction: 0.03,
     pointOffset: {
       label: "Point Offset",
       type: "range",

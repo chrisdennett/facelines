@@ -3,23 +3,23 @@ import styled from "styled-components";
 
 const Display = ({ sizeInfo, appData }) => {
   const [sourceImg, setSourceImg] = useState(null);
-  const [canvasX, setCanvasX] = useState(0);
-  const [canvasY, setCanvasY] = useState(0);
   const [canvasWidth, setCanvasWidth] = useState(100);
   const [canvasHeight, setCanvasHeight] = useState(100);
   const [blockSize, setBlockSize] = useState(10);
   const [blockData, setBlockData] = useState(null);
+  const [fringe, setFringe] = useState(1);
 
   const lineColour = "black";
   const {
     pointOffset,
     lineThickness,
     showVerticalLines,
-    showHorizontalLines
+    showHorizontalLines,
+    fringeFraction
   } = appData.settings;
-  const maxLineOffset = blockSize * pointOffset.value;
 
-  const blockWidth = 132;
+  const maxLineOffset = blockSize * pointOffset.value;
+  const totalBlocksAlongLongestSide = 128;
 
   useEffect(() => {
     if (!sourceImg) {
@@ -31,70 +31,78 @@ const Display = ({ sizeInfo, appData }) => {
       image.src = "img/holly.jpg";
       // image.src = "img/sample-397x480.png";
     } else {
-      const smallCanvas = createSmallCanvas(sourceImg, blockWidth, blockWidth);
+      const smallCanvas = createSmallCanvas(
+        sourceImg,
+        totalBlocksAlongLongestSide,
+        totalBlocksAlongLongestSide
+      );
       const bData = getBlockData(smallCanvas);
 
-      const { width, height } = getDimensions(
+      const { width, height, fringe } = getDimensions(
         bData.width,
         bData.height,
         sizeInfo.width,
-        sizeInfo.height
+        sizeInfo.height,
+        fringeFraction
       );
 
-      const x = (sizeInfo.width - width) / 2;
-      const y = (sizeInfo.height - height) / 2;
+      const widthWithoutFringe = height - fringe * 2;
 
+      setFringe(fringe);
       setBlockData(bData);
-      setCanvasX(x);
-      setCanvasY(y);
       setCanvasWidth(width);
       setCanvasHeight(height);
-      setBlockSize(width / bData.width);
+      setBlockSize(widthWithoutFringe / bData.width);
     }
-  }, [sourceImg, sizeInfo]);
+  }, [sourceImg, sizeInfo, fringeFraction]);
 
   if (!blockData) return <div>NO DATA</div>;
 
   const { horizontalPaths, verticalPaths } = createPaths(
     blockData,
     blockSize,
-    maxLineOffset
+    maxLineOffset,
+    fringe
   );
+
+  const doubleFringe = fringe * 2;
 
   return (
     <Container>
-      <CanvasHolder left={canvasX} top={canvasY}>
-        <svg width={canvasWidth} height={canvasHeight}>
-          {showHorizontalLines &&
-            horizontalPaths.map((hPath, index) => (
-              <polyline
-                key={index}
-                fill={"none"}
-                stroke={lineColour}
-                strokeWidth={lineThickness.value}
-                points={hPath}
-              />
-            ))}
+      <svg
+        style={{ width: "100%", height: "100%" }}
+        viewBox={`0 0 ${canvasWidth + doubleFringe} ${canvasHeight +
+          doubleFringe}`}
+      >
+        {showHorizontalLines &&
+          horizontalPaths.map((hPath, index) => (
+            <polyline
+              key={index}
+              fill={"none"}
+              stroke={lineColour}
+              strokeWidth={lineThickness.value}
+              points={hPath}
+            />
+          ))}
 
-          {showVerticalLines &&
-            verticalPaths.map((vPath, index) => (
-              <polyline
-                key={index}
-                fill={"none"}
-                stroke={"red"}
-                strokeWidth={lineThickness.value}
-                points={vPath}
-              />
-            ))}
-        </svg>
-      </CanvasHolder>
+        {showVerticalLines &&
+          verticalPaths.map((vPath, index) => (
+            <polyline
+              key={index}
+              fill={"none"}
+              stroke={"red"}
+              strokeWidth={lineThickness.value}
+              points={vPath}
+            />
+          ))}
+      </svg>
     </Container>
   );
 };
 
 export default Display;
 
-const createPaths = (blockData, blockSize, maxLineOffset) => {
+const createPaths = (blockData, blockSize, maxLineOffset, fringe) => {
   let points = "0,0";
   let horizontalPaths = [];
   let verticalPaths = [];
@@ -115,10 +123,20 @@ const createPaths = (blockData, blockSize, maxLineOffset) => {
 
       pointOffset = row[colIndex] * maxLineOffset;
 
-      x = colIndex * blockSize - pointOffset;
-      y = rowIndex * blockSize - pointOffset;
+      x = fringe + colIndex * blockSize - pointOffset;
+      y = fringe + rowIndex * blockSize - pointOffset;
+
+      if (colIndex == 0) {
+        const currFringeStart = Math.random() * (fringe / 2);
+        points += `${currFringeStart},${y} ${x},${y}`;
+      }
 
       points += ` ${x},${y}`;
+
+      if (colIndex == totalCols - 1) {
+        const currFringeEnd = Math.random() * (fringe / 2);
+        points += ` ${x},${y} ${x + currFringeEnd},${y}`;
+      }
     }
 
     horizontalPaths.push(points);
@@ -130,13 +148,21 @@ const createPaths = (blockData, blockSize, maxLineOffset) => {
     col = cols[colIndex];
 
     for (rowIndex = 0; rowIndex < totalRows; rowIndex++) {
-      i = rowIndex * totalCols + colIndex;
-
       pointOffset = col[rowIndex] * maxLineOffset;
       y = rowIndex * blockSize - pointOffset;
-      x = colIndex * blockSize - pointOffset;
+      x = fringe + colIndex * blockSize - pointOffset;
 
-      points += ` ${x},${y}`;
+      if (rowIndex == 0) {
+        const currFringeStart = Math.random() * (fringe / 2);
+        points += `${x},${currFringeStart} ${x},${fringe}`;
+      } else {
+        points += ` ${x},${y + fringe}`;
+      }
+
+      if (rowIndex == totalRows - 1) {
+        const currFringeEnd = Math.random() * (fringe / 2);
+        points += ` ${x},${y + fringe} ${x},${y + fringe + currFringeEnd}`;
+      }
     }
 
     verticalPaths.push(points);
@@ -195,26 +221,33 @@ const getBlockData = inputCanvas => {
   return blockData;
 };
 
-const getDimensions = (sourceW, sourceH, maxWidth, maxHeight) => {
-  // limit maximum size to source image size (i.e. don't increase size)
-  //const maxWidth = Math.min(maxTargetWidth, sourceW);
-  //const maxHeight = Math.min(maxTargetHeight, sourceH);
+const getDimensions = (
+  sourceW,
+  sourceH,
+  maxWidth,
+  maxHeight,
+  fringeFraction = 0.1
+) => {
+  let fringe = Math.min(maxWidth * fringeFraction, maxHeight * fringeFraction);
+  let doubleFringe = fringe * 2;
 
   const widthToHeightRatio = sourceH / sourceW;
   const heightToWidthRatio = sourceW / sourceH;
 
   // set size based on max width
+
   let w = maxWidth;
   let h = w * widthToHeightRatio;
 
   // if that makes the h bigger than max
   if (h > maxHeight) {
-    // set size based on max height
+    //set size based on max height
     h = maxHeight;
     w = h * heightToWidthRatio;
   }
+
   // return the output width and height so it can be used to position canvas
-  return { width: w, height: h };
+  return { width: w, height: h, fringe };
 };
 
 const createSmallCanvas = (source, maxWidth, maxHeight) => {
@@ -245,15 +278,6 @@ const createSmallCanvas = (source, maxWidth, maxHeight) => {
 
   return smallCanvas;
 };
-
-// STYLES
-const CanvasHolder = styled.div`
-  position: absolute;
-  left: ${props => props.left}px;
-  top: ${props => props.top}px;
-  line-height: 0;
-  /* box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22); */
-`;
 
 const Container = styled.div`
   background: white;
