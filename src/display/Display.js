@@ -15,7 +15,7 @@ const Display = ({ sizeInfo, appData }) => {
     lineThickness,
     showVerticalLines,
     showHorizontalLines,
-    fringeFraction
+    fringeFraction,
   } = appData.settings;
 
   const maxLineOffset = blockSize * pointOffset.value;
@@ -71,8 +71,9 @@ const Display = ({ sizeInfo, appData }) => {
     <Container>
       <svg
         style={{ width: "100%", height: "100%" }}
-        viewBox={`0 0 ${canvasWidth + doubleFringe} ${canvasHeight +
-          doubleFringe}`}
+        viewBox={`0 0 ${canvasWidth + doubleFringe} ${
+          canvasHeight + doubleFringe
+        }`}
       >
         {showHorizontalLines &&
           horizontalPaths.map((hPath, index) => (
@@ -111,7 +112,7 @@ const createPaths = (blockData, blockSize, maxLineOffset, fringe) => {
   const totalRows = rows.length;
   const totalCols = rows[0].length;
 
-  let i, x, y, colIndex, row, col, rowIndex, pointOffset;
+  let x, y, colIndex, row, col, rowIndex, pointOffset;
 
   // create rows
   for (rowIndex = 0; rowIndex < totalRows; rowIndex++) {
@@ -119,21 +120,21 @@ const createPaths = (blockData, blockSize, maxLineOffset, fringe) => {
     row = rows[rowIndex];
 
     for (colIndex = 0; colIndex < totalCols; colIndex++) {
-      i = rowIndex * totalCols + colIndex;
+      // let i = rowIndex * totalCols + colIndex;
 
       pointOffset = row[colIndex] * maxLineOffset;
 
       x = fringe + colIndex * blockSize - pointOffset;
       y = fringe + rowIndex * blockSize - pointOffset;
 
-      if (colIndex == 0) {
+      if (colIndex === 0) {
         const currFringeStart = Math.random() * (fringe / 2);
         points += `${currFringeStart},${y} ${x},${y}`;
       }
 
       points += ` ${x},${y}`;
 
-      if (colIndex == totalCols - 1) {
+      if (colIndex === totalCols - 1) {
         const currFringeEnd = Math.random() * (fringe / 2);
         points += ` ${x},${y} ${x + currFringeEnd},${y}`;
       }
@@ -152,14 +153,14 @@ const createPaths = (blockData, blockSize, maxLineOffset, fringe) => {
       y = rowIndex * blockSize - pointOffset;
       x = fringe + colIndex * blockSize - pointOffset;
 
-      if (rowIndex == 0) {
+      if (rowIndex === 0) {
         const currFringeStart = Math.random() * (fringe / 2);
         points += `${x},${currFringeStart} ${x},${fringe}`;
       } else {
         points += ` ${x},${y + fringe}`;
       }
 
-      if (rowIndex == totalRows - 1) {
+      if (rowIndex === totalRows - 1) {
         const currFringeEnd = Math.random() * (fringe / 2);
         points += ` ${x},${y + fringe} ${x},${y + fringe + currFringeEnd}`;
       }
@@ -171,13 +172,13 @@ const createPaths = (blockData, blockSize, maxLineOffset, fringe) => {
   return { horizontalPaths, verticalPaths };
 };
 
-const getBlockData = inputCanvas => {
+const getBlockData = (inputCanvas) => {
   const { width: inputW, height: inputH } = inputCanvas;
   const blockData = {
     width: inputW,
     height: inputH,
     rows: [],
-    cols: []
+    cols: [],
   };
 
   const inputCtx = inputCanvas.getContext("2d");
@@ -229,7 +230,7 @@ const getDimensions = (
   fringeFraction = 0.1
 ) => {
   let fringe = Math.min(maxWidth * fringeFraction, maxHeight * fringeFraction);
-  let doubleFringe = fringe * 2;
+  // let doubleFringe = fringe * 2;
 
   const widthToHeightRatio = sourceH / sourceW;
   const heightToWidthRatio = sourceW / sourceH;
